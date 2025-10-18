@@ -7,7 +7,7 @@
 #     Anyone can verify that the final tally is correct based on published information
 
 # chatGpt chat: https://chatgpt.com/share/68f29721-899c-800b-979d-09d5e253b0d1
-
+# MIT open courseware https://ocw.mit.edu/courses/6-5630-advanced-topics-in-cryptography-fall-2023/pages/lecture-6-fiat-shamir-paradigm-and-zero-knowledge-proofs/
 # Python used: 3.13.5 and buildin libraries
 # """
 
@@ -35,14 +35,14 @@ def prove_disjunction(publicKey, ciphertext, plaintext, encryptionRand, choices)
     simulated_sum = 0
     sim_data = {}
     for i, m in enumerate(choices):
-        if m == plaintext:
+        if m == plaintext: #actual vote
             s = secrets.randbelow(publicKey["q"]-1)+1
             a1 = pow(publicKey["g"], s, publicKey["p"])
             a2 = pow(publicKey["h"], s, publicKey["p"])
             commitments.append((a1, a2))
             sim_data["real_index"] = i
             sim_data["s_real"] = s
-        else:
+        else: #fake vote to ensure viewers don't know which one was chosen
             e_sim = secrets.randbelow(publicKey["q"]-1) + 1
             z_sim = secrets.randbelow(publicKey["q"]-1) + 1
             c1_inv_e = pow(cipher1, (-e_sim) % (publicKey["q"]), publicKey["p"])
@@ -132,7 +132,7 @@ def verify_zkp(publicKey, ciphertext, proof):
         return False
     return True
 
-def step4_indiv_verify(voterHashed, ciphertext, proof, bulletinBoard, publicKey):
+def step3_indiv_verify(voterHashed, ciphertext, proof, bulletinBoard, publicKey):
     found_entry = next((entry for entry in bulletinBoard if entry["voter_id"] == voterHashed), None)
     if not found_entry:
         return False
@@ -143,14 +143,16 @@ def step4_indiv_verify(voterHashed, ciphertext, proof, bulletinBoard, publicKey)
     
     return True #if we reach here the ciphertext encrypts one valid choice
 
-def step5_universal_verify(bulletinBoard, finalTallyCipher, decryptionProof, publicKey):
+def step4_universal_verify(bulletinBoard, finalTallyCipher, decryptionProof, publicKey):
     print("Doing universal verification")
     for entry in bulletinBoard:
         if not verify_zkp(publicKey, tuple(entry["ciphertext"]), entry["proof"]):
             return False #last checked proof wasnt valid
+    
+    
+    #this could be removed
     cipher1Total = 1
     cipher2Total = 1
-
     for entry in bulletinBoard:
         cipher1, cipher2 = entry["ciphertext"]
         cipher1Total = (cipher1Total * cipher1) % publicKey["p"]
