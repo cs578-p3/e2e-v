@@ -62,11 +62,43 @@ Below is a rough outline of the main protocol steps. Steps 1–4 are high-level 
 
 - A lightweight verification routine that recomputes the tally and reports mismatches is implemented in `src/e2e_v/steps.py`.
 
-How to run the tests
+## How to run the code and tests
 
-1. Activate your virtual environment (if applicable) and run pytest from the repository root:
+> [!NOTE]
+> This guide assumes you already have python installed. If not, please follow the instructions on their official website. https://www.python.org/downloads/
 
-```powershell
+0. Clone repo:
+
+```sh
+git clone https://github.com/cs578-p3/e2e-v.git
+cd ./e2e-v
+```
+
+1. Setup a virtual environment from the root of the repository.
+
+```sh
+python -m venv ./.venv
+# For unix based OS
+source ./.venv/bin/activate
+# if on powershell (windows); Run:
+./.venv/Scripts/Activate.ps1
+```
+
+2. Install dependencies
+
+```sh
+pip install -r requirements.txt
+```
+
+3. To run the pre-created 'app':
+
+```sh
+python ./run_election.py
+```
+
+4. To run tests:
+
+```sh
 # from repository root
 python -m pytest -q
 ```
