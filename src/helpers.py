@@ -214,7 +214,7 @@ def _make_challenge(*elements) -> int:
 
     Returns an integer derived from SHA-256 over the provided elements.
     """
-    return H_int(*elements)
+    return H_int(*elements[-1], groupPrime=elements[len(elements)-1])
 
 
 ## --- homomorphic aggregation + verifiable decryption helpers ----------------
@@ -283,7 +283,7 @@ def generate_decryption_proof(
     a1 = pow(params.g, t, params.p)
     a2 = pow(c1, t, params.p)
     # challenge
-    e = _make_challenge(params.p, params.g, pub.y, c1, s, a1, a2) % params.q
+    e = _make_challenge(params.p, params.g, pub.y, c1, s, a1, a2, params.q) % params.q
     z = (t - e * x) % params.q
     return {"c1": c1, "s": s, "a1": a1, "a2": a2, "e": e, "z": z}
 
@@ -305,7 +305,7 @@ def verify_decryption_proof(pub: ElGamalPublicKey, proof: Dict[str, Any]) -> boo
     # recompute helper values and the challenge
     left1 = (pow(params.g, z, params.p) * pow(pub.y, e, params.p)) % params.p
     left2 = (pow(c1, z, params.p) * pow(s, e, params.p)) % params.p
-    e_check = _make_challenge(params.p, params.g, pub.y, c1, s, left1, left2) % params.q
+    e_check = _make_challenge(params.p, params.g, pub.y, c1, s, left1, left2, params.q) % params.q
     return e_check == e
 
 
@@ -366,12 +366,12 @@ def encrypt_ballot_with_rands(
 ## --- verification helpers (demo ZKPs) -----------------------------------
 
 
-def H_int(*elements) -> int:
+def H_int(*elements, groupPrime) -> int:
     h = hashlib.sha256()
-    for e in elements:
+    for e in elements[-1]:
         h.update(str(e).encode())
         h.update(b"|")
-    return int.from_bytes(h.digest(), "big") % 7919
+    return int.from_bytes(h.digest(), "big") % groupPrime
 
 
 def prove_disjunction(
@@ -431,7 +431,7 @@ def prove_disjunction(
     )
     for a1, a2 in commitments:
         flat.extend([a1, a2])
-    e = H_int(*flat)
+    e = H_int(*flat, groupPrime=publicKey["q"])
     real_i = sim_data.get("choice_index", 0)
     e_real = (e - simulated_sum) % publicKey["q"]
     e_vals[real_i] = e_real
@@ -495,7 +495,7 @@ def verify_zkp(
     )
     for a1, a2 in commitments:
         flat.extend([a1, a2])
-    e = H_int(*flat)
+    e = H_int(*flat, groupPrime=publicKey["q"])
     if sum(e_vals) % publicKey["q"] != e % publicKey["q"]:
         return False
     return True
